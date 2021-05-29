@@ -65,8 +65,8 @@ class SPM_Server(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
         self.wfile.write(bytes("""<html>
-
 <head>
+    <meta charset="UTF-8"><meta name=viewport content="width=device-width, initial-scale=1.0">
     <title>Spotify Playlist Manager</title>
     <style>
         body
@@ -90,7 +90,7 @@ class SPM_Server(BaseHTTPRequestHandler):
         {
             word-break:     break-all;
             word-wrap:      break-word;
-            width:          3em;
+            width:          4em;
         }
         table.b
         {
@@ -155,6 +155,8 @@ class SPM_Server(BaseHTTPRequestHandler):
             border-radius:  0.5em;
             margin:         0 0.2em;
             border:         2px solid hsla(0,0%,0%,0);
+            border-top:     2px solid hsla(0,0%,100%,0.2);
+            border-bottom:  2px dotted hsla(0,0%,0%,0.1);
         }
 
 """, "utf-8"))
@@ -260,6 +262,7 @@ class SPM_Server(BaseHTTPRequestHandler):
             if track_id is None:
                 self.wfile.write(bytes('<td><b>????</b>  ' + str(track['title']) + '</td>', "utf-8"))
             else:
+                # self.wfile.write(bytes("<td class=track_title onclick=play_track('"+track_id+"')>" + str(track['title']) + '</td>', "utf-8"))
                 self.wfile.write(bytes("<td class=track_title onclick=play_track('"+track_id+"')>" + str(track['title']) + '</td>', "utf-8"))
 
             # for playlist_id in track['playlists']:
