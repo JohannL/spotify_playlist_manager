@@ -20,22 +20,11 @@ scope = 'playlist-read-private'
 config = configparser.ConfigParser()
 config.read('config.ini')
 
-
-
-
-
-sp = spotipy.Spotify(   auth_manager    = SpotifyOAuth
-                        (
+sp = spotipy.Spotify(auth_manager    = SpotifyOAuth(
                             client_id       = config['General']['client_id'],
                             client_secret   = config['General']['client_secret'],
                             redirect_uri    = config['General']['redirect_uri'],
-                            scope           = scope
-                        )
-                    )
-
-# user_playlists = sp.current_user_playlists(limit=50)
-
-
+                            scope           = scope))
 
 class SPM_Server(BaseHTTPRequestHandler):
     def list_tracks(self):
@@ -59,7 +48,6 @@ class SPM_Server(BaseHTTPRequestHandler):
         uprint(str(len(tracks_dict)) + " tracks total in " + str(playlist_count) + " playlists")
         uprint('----------------')
 
-        dic2={}
         for i in sorted(tracks_dict):
            sorted_tracks_dict[i] = tracks_dict[i]
 
@@ -71,9 +59,7 @@ class SPM_Server(BaseHTTPRequestHandler):
 
         self.wfile.write(bytes('<script>function play_track(track_id){document.getElementById("sp_embed").src="https://open.spotify.com/embed/track/" + track_id}</script>', "utf-8"))
 
-        # self.wfile.write(bytes('<tr><th colspan='+str(len(playlists_dict) + 2)+'>', "utf-8"))
         self.wfile.write(bytes('<iframe id="sp_embed" src="" width="300" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>', "utf-8"))
-        # self.wfile.write(bytes('</th></tr>', "utf-8"))
 
         self.wfile.write(bytes('<table class=b>', "utf-8"))
 
