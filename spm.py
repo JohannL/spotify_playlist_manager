@@ -1,3 +1,5 @@
+import operator
+from collections import OrderedDict
 import json
 import sys
 import spotipy
@@ -48,7 +50,12 @@ class SPM_Server(BaseHTTPRequestHandler):
         uprint(str(len(tracks_dict)) + " tracks total in " + str(playlist_count) + " playlists")
         uprint('----------------')
 
-        for i in sorted(tracks_dict):
+        sorted_tracks_dict_title = {}
+
+        for i in OrderedDict(sorted(tracks_dict.items(), key=lambda x: x[1]['title'])):
+           sorted_tracks_dict_title[i] = tracks_dict[i]
+
+        for i in OrderedDict(sorted(sorted_tracks_dict_title.items(), key=lambda x: x[1]['artist'])):
            sorted_tracks_dict[i] = tracks_dict[i]
 
         self.send_response(200)
@@ -57,10 +64,66 @@ class SPM_Server(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(bytes("""<html>
 
-            <head><title>Spotify Playlist Manager</title><style>body {font-family: sans-serif;} input[type='checkbox'] {width: 1.5em;height:1.5em} .b td {border: 1px solid #ff0;}.b th.playlist{word-break: break-all; word-wrap: break-word;width:3em;} table.b {margin-top:80px; border-spacing:0; position:relative;} th {text-align:left; position: sticky;top: 80px; background:#ddd;color:#222; } td.track_title:hover {background:#ff0;} table.b td {background:#eee;border-top:1px solid #fff;border-left:1px solid #fff;border-right:1px solid #ddd;border-bottom:1px solid #ddd;font-size:1.5em} #sp_embed {width:100%; position:fixed; top: 0px;z-index:2;background:black;}</style></head>""", "utf-8"))
-        self.wfile.write(bytes("<body>", "utf-8"))
+<head>
+    <title>Spotify Playlist Manager</title>
+    <style>
+        body
+        {
+            font-family: sans-serif;
+        }
+        input[type='checkbox']
+        {
+            width: 1.25em;
+            height:1.25em
+        }
+        .b td
+        {
+            border: 1px solid #ff0;
+        }
+        .b th.playlist
+        {
+            word-break: break-all;
+            word-wrap: break-word;
+            width:3em;
+        }
+        table.b
+        {
+            margin-top:80px;
+            border-spacing:0;
+            position:relative;
+        }
+        th
+        {
+            text-align:left;
+            position: sticky;
+            top: 80px;
+            background:#ddd;
+            color:#222;
+        }
+        td.track_title:hover
+        {
+            background:#ff0;
+        }
+        table.b td
+        {
+            background:#eee;
+            border-top:1px solid #fff;
+            border-left:1px solid #fff;
+            border-right:1px solid #ddd;
+            border-bottom:1px solid #ddd;
+            font-size:1.25em
+        }
+        #sp_embed
+        {
+            width:100%;
+            position:fixed;
+            top: 0px;
+            z-index:2;
+            background:black;
+        }
+    </style></head>
+<body>
 
-        self.wfile.write(bytes("""
 <script>
 
     function play_track(track_id)
@@ -99,23 +162,17 @@ class SPM_Server(BaseHTTPRequestHandler):
         }
     }
 </script>
-""", "utf-8"))
 
-        self.wfile.write(bytes('<iframe id="sp_embed" src="" width="300" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>', "utf-8"))
-
-        self.wfile.write(bytes("""
+<iframe id="sp_embed" src="" width="300" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
 
 <table class=b>
     <tr>
         <th>artist</th>
-        <th>title</th>
-""", "utf-8"))
+        <th>title</th>""", "utf-8"))
 
         playlist_index = 0
         for playlist_id in playlists_dict:
-            self.wfile.write(bytes("""
-        <th class=playlist style="background:hsla('+str(playlist_index * 72)+',100%, 95%, 1);">
-""", "utf-8"))
+            self.wfile.write(bytes("""<th class=playlist style="background:hsla('+str(playlist_index * 72)+',100%, 95%, 1);">""", "utf-8"))
             playlist_index += 1
             self.wfile.write(bytes(playlists_dict[playlist_id], "utf-8"))
             self.wfile.write(bytes('</th>', "utf-8"))
@@ -143,9 +200,9 @@ class SPM_Server(BaseHTTPRequestHandler):
                     self.wfile.write(bytes(' checked', "utf-8"))
                 self.wfile.write(bytes(""" onchange="do_toggle(this);">""", "utf-8"))
                 self.wfile.write(bytes('</td>', "utf-8"))
-            self.wfile.write(bytes('</tr>', "utf-8"))
-        self.wfile.write(bytes('</table>', "utf-8"))
-        self.wfile.write(bytes("</body></html>", "utf-8"))
+            self.wfile.write(bytes("""</tr>
+""", "utf-8"))
+        self.wfile.write(bytes("""</table></body></html>""", "utf-8"))
 
     def do_GET(self):
         if (self.path == '/'):
