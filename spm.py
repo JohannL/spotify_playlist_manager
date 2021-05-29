@@ -10,6 +10,8 @@ from spotipy.oauth2 import SpotifyClientCredentials
 from spotipy.oauth2 import SpotifyOAuth
 import configparser
 
+color_step = -42
+
 debug_mode = True
 
 playlists_dict = {}
@@ -69,58 +71,128 @@ class SPM_Server(BaseHTTPRequestHandler):
     <style>
         body
         {
-            font-family: sans-serif;
+            font-family:    sans-serif;
         }
         input[type='checkbox']
         {
-            width: 1.25em;
-            height:1.25em
+            width:          100%;
+            height:         1.1em
+        }
+        input[type='checkbox']:hover
+        {
+            border:         1px solid #ff0;
         }
         .b td
         {
-            border: 1px solid #ff0;
+            border:         1px solid #ff0;
         }
         .b th.playlist
         {
-            word-break: break-all;
-            word-wrap: break-word;
-            width:3em;
+            word-break:     break-all;
+            word-wrap:      break-word;
+            width:          3em;
         }
         table.b
         {
-            margin-top:80px;
-            border-spacing:0;
-            position:relative;
+            margin-top:     80px;
+            border-spacing: 0;
+            position:       relative;
         }
         th
         {
-            text-align:left;
-            position: sticky;
-            top: 80px;
-            background:#ddd;
-            color:#222;
+            position:       sticky;
+            top:            80px;
+            background:     #ddd;
+            color:          #222;
+            font-size:      0.8em;
+            padding:        0.5em; 0.07em
+            text-align:     center;
         }
         td.track_title:hover
         {
-            background:#ff0;
+            background:     #ff0;
         }
         table.b td
         {
-            background:#eee;
-            border-top:1px solid #fff;
-            border-left:1px solid #fff;
-            border-right:1px solid #ddd;
-            border-bottom:1px solid #ddd;
-            font-size:1.25em
+            background:     #eee;
+            border-top:     1px solid #fff;
+            border-left:    1px solid #fff;
+            border-right:   1px solid #ddd;
+            border-bottom:  1px solid #ddd;
+            font-size:      0.9em
         }
         #sp_embed
         {
-            width:100%;
-            position:fixed;
-            top: 0px;
-            z-index:2;
-            background:black;
+            width:          100%;
+            position:       fixed;
+            top:            0px;
+            z-index:        2;
+            background:     black;
         }
+
+        table.b td.pc
+        {
+            border:         none;
+            padding:        0;
+        }
+
+        table.b td.pc label
+        {
+            display:        block;
+            height:         100%;
+        }
+
+        table.b td.pc label input[type=checkbox]
+        {
+            display:        none;
+        }
+
+        table.b td.pc label input[type=checkbox] ~ span
+        {
+            display:        inline-block;
+            width:          90%;
+            height:         100%;
+            border-radius:  0.5em;
+            margin:         0 0.2em;
+            border:         2px solid hsla(0,0%,0%,0);
+        }
+
+""", "utf-8"))
+
+        self.wfile.write(bytes("""""", "utf-8"))
+
+        playlist_index = 0
+        for playlist_id in playlists_dict:
+            playlist_index += 1
+            self.wfile.write(bytes("""
+            .ph_"""+str(playlist_index)+"""
+            {
+                background:     hsla("""+str(playlist_index * color_step)+""",100%, 35%, 1);
+                color:          hsla("""+str(playlist_index * color_step)+""",100%, 90%, 1);
+            }""", "utf-8"))
+            self.wfile.write(bytes("""
+
+            table.b td label.pc_"""+str(playlist_index)+""" input[type=checkbox]:checked ~ span
+            {
+                background:     hsla("""+str(playlist_index * color_step)+""",100%, 40%, 1);
+            }
+            table.b td label.pc_"""+str(playlist_index)+""" input[type=checkbox]:hover:checked ~ span
+            {
+                background:     hsla("""+str(playlist_index * color_step)+""",100%, 60%, 1);
+                border:         2px dotted hsla(0,0%,0%,1);
+            }
+
+            table.b td label.pc_"""+str(playlist_index)+""" input[type=checkbox] ~ span
+            {
+                background:     hsla("""+str(playlist_index * color_step)+""",100%, 95%, 1);
+            }
+            table.b td label.pc_"""+str(playlist_index)+""" input[type=checkbox]:hover ~ span
+            {
+                background:     hsla("""+str(playlist_index * color_step)+""",100%, 65%, 1);
+                border:         2px solid hsla(0,0%,0%,0.5);
+            }
+            """, "utf-8"))
+        self.wfile.write(bytes("""
     </style></head>
 <body>
 
@@ -134,9 +206,9 @@ class SPM_Server(BaseHTTPRequestHandler):
     function do_toggle(el)
     {
         if (el.checked)
-            ajax('""" + "http://" + hostName + ":" + str(serverPort) + """/add/' + el.dataset.playlist + '/' + el.dataset.track + '/', '', null, null);
+            ajax('""" + "http://" + hostName + ":" + str(serverPort) + """/add/' + el.dataset.p + '/' + el.dataset.t + '/', '', null, null);
         else
-            ajax('""" + "http://" + hostName + ":" + str(serverPort) + """/remove/' + el.dataset.playlist + '/' + el.dataset.track + '/', '', null, null);
+            ajax('""" + "http://" + hostName + ":" + str(serverPort) + """/remove/' + el.dataset.p + '/' + el.dataset.t + '/', '', null, null);
     }
 
     function ajax(url, post_parameters, callback, data)
@@ -172,8 +244,8 @@ class SPM_Server(BaseHTTPRequestHandler):
 
         playlist_index = 0
         for playlist_id in playlists_dict:
-            self.wfile.write(bytes("""<th class=playlist style="background:hsla('+str(playlist_index * 72)+',100%, 95%, 1);">""", "utf-8"))
             playlist_index += 1
+            self.wfile.write(bytes("""<th class='playlist ph_""" + str(playlist_index) + """'>""", "utf-8"))
             self.wfile.write(bytes(playlists_dict[playlist_id], "utf-8"))
             self.wfile.write(bytes('</th>', "utf-8"))
         self.wfile.write(bytes('</tr>', "utf-8"))
@@ -193,16 +265,17 @@ class SPM_Server(BaseHTTPRequestHandler):
             # for playlist_id in track['playlists']:
             playlist_index = 0
             for playlist_id in playlists_dict:
-                self.wfile.write(bytes('<td style="background:hsla('+str(playlist_index * 72)+',100%, 90%, 1);">', "utf-8"))
+                self.wfile.write(bytes('<td class=pc>', "utf-8"))
                 playlist_index += 1
-                self.wfile.write(bytes('<input type=checkbox data-track='+track_id+' data-playlist='+playlist_id+' ', "utf-8"))
+                self.wfile.write(bytes('<label class="pc_' + str(playlist_index) + '"><input type=checkbox data-t='+track_id+' data-p='+playlist_id+' ', "utf-8"))
                 if (playlist_id in track['playlists']):
                     self.wfile.write(bytes(' checked', "utf-8"))
-                self.wfile.write(bytes(""" onchange="do_toggle(this);">""", "utf-8"))
+                self.wfile.write(bytes(' onchange="do_toggle(this);"><span>&nbsp;</span></label>', "utf-8"))
+
                 self.wfile.write(bytes('</td>', "utf-8"))
             self.wfile.write(bytes("""</tr>
 """, "utf-8"))
-        self.wfile.write(bytes("""</table></body></html>""", "utf-8"))
+        self.wfile.write(bytes('</table></body></html>', "utf-8"))
 
     def do_GET(self):
         if (self.path == '/'):
