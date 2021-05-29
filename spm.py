@@ -141,7 +141,7 @@ class SPM_Server(BaseHTTPRequestHandler):
                 self.wfile.write(bytes('<input type=checkbox data-track='+track_id+' data-playlist='+playlist_id+' ', "utf-8"))
                 if (playlist_id in track['playlists']):
                     self.wfile.write(bytes(' checked', "utf-8"))
-                self.wfile.write(bytes("""onchange="do_toggle(this);">""", "utf-8"))
+                self.wfile.write(bytes(""" onchange="do_toggle(this);">""", "utf-8"))
                 self.wfile.write(bytes('</td>', "utf-8"))
             self.wfile.write(bytes('</tr>', "utf-8"))
         self.wfile.write(bytes('</table>', "utf-8"))
