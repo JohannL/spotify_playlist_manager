@@ -15,7 +15,7 @@ tracks_dict = {}
 sorted_tracks_dict = {}
 hostName = "localhost"
 serverPort = 8080
-scope = 'playlist-read-private'
+scope = 'playlist-read-private playlist-modify-private playlist-modify-public'
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -53,22 +53,69 @@ class SPM_Server(BaseHTTPRequestHandler):
 
         self.send_response(200)
         self.send_header("Content-type", "text/html")
+        self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
-        self.wfile.write(bytes("<html><head><title>Spotify Playlist Manager</title><style>body {font-family: sans-serif;} input[type='checkbox'] {width: 1.5em;height:1.5em} .b td {border: 1px solid #ff0;}.b th.playlist{word-break: break-all; word-wrap: break-word;width:3em;} table.b {margin-top:80px; border-spacing:0; position:relative;} th {text-align:left; position: sticky;top: 80px; background:#ddd;color:#222; } td.track_title:hover {background:#ff0;} table.b td {background:#eee;border-top:1px solid #fff;border-left:1px solid #fff;border-right:1px solid #ddd;border-bottom:1px solid #ddd;font-size:1.5em} #sp_embed {width:100%; position:fixed; top: 0px;z-index:2;background:black;}</style></head>", "utf-8"))
+        self.wfile.write(bytes("""<html>
+
+            <head><title>Spotify Playlist Manager</title><style>body {font-family: sans-serif;} input[type='checkbox'] {width: 1.5em;height:1.5em} .b td {border: 1px solid #ff0;}.b th.playlist{word-break: break-all; word-wrap: break-word;width:3em;} table.b {margin-top:80px; border-spacing:0; position:relative;} th {text-align:left; position: sticky;top: 80px; background:#ddd;color:#222; } td.track_title:hover {background:#ff0;} table.b td {background:#eee;border-top:1px solid #fff;border-left:1px solid #fff;border-right:1px solid #ddd;border-bottom:1px solid #ddd;font-size:1.5em} #sp_embed {width:100%; position:fixed; top: 0px;z-index:2;background:black;}</style></head>""", "utf-8"))
         self.wfile.write(bytes("<body>", "utf-8"))
 
-        self.wfile.write(bytes('<script>function play_track(track_id){document.getElementById("sp_embed").src="https://open.spotify.com/embed/track/" + track_id}</script>', "utf-8"))
+        self.wfile.write(bytes("""
+<script>
+
+    function play_track(track_id)
+    {
+        document.getElementById("sp_embed").src="https://open.spotify.com/embed/track/" + track_id
+    }
+
+    function do_toggle(el)
+    {
+        if (el.checked)
+            ajax('""" + "http://" + hostName + ":" + str(serverPort) + """/add/' + el.dataset.playlist + '/' + el.dataset.track + '/', '', null, null);
+        else
+            ajax('""" + "http://" + hostName + ":" + str(serverPort) + """/remove/' + el.dataset.playlist + '/' + el.dataset.track + '/', '', null, null);
+    }
+
+    function ajax(url, post_parameters, callback, data)
+    {
+        var http = new XMLHttpRequest();
+        if (http != undefined)
+        {
+            http.open(post_parameters == '' ? 'GET' : 'POST', url, true);
+            http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            http.onreadystatechange = function()
+            {
+                if (callback != null)
+                {
+                    callback(this.readyState, this.status, this.responseText, data);
+                }
+            };
+            http.send(post_parameters);
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+</script>
+""", "utf-8"))
 
         self.wfile.write(bytes('<iframe id="sp_embed" src="" width="300" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>', "utf-8"))
 
-        self.wfile.write(bytes('<table class=b>', "utf-8"))
+        self.wfile.write(bytes("""
 
-        self.wfile.write(bytes('<tr>', "utf-8"))
-        self.wfile.write(bytes('<th>artist</th>', "utf-8"))
-        self.wfile.write(bytes('<th>title</th>', "utf-8"))
+<table class=b>
+    <tr>
+        <th>artist</th>
+        <th>title</th>
+""", "utf-8"))
+
         playlist_index = 0
         for playlist_id in playlists_dict:
-            self.wfile.write(bytes('<th class=playlist style="background:hsla('+str(playlist_index * 72)+',100%, 95%, 1);">', "utf-8"))
+            self.wfile.write(bytes("""
+        <th class=playlist style="background:hsla('+str(playlist_index * 72)+',100%, 95%, 1);">
+""", "utf-8"))
             playlist_index += 1
             self.wfile.write(bytes(playlists_dict[playlist_id], "utf-8"))
             self.wfile.write(bytes('</th>', "utf-8"))
@@ -84,17 +131,17 @@ class SPM_Server(BaseHTTPRequestHandler):
             if track_id is None:
                 self.wfile.write(bytes('<td><b>????</b>  ' + str(track['title']) + '</td>', "utf-8"))
             else:
-                self.wfile.write(bytes('<td class=track_title onclick=play_track("'+track_id+'")>' + str(track['title']) + '</td>', "utf-8"))
+                self.wfile.write(bytes("<td class=track_title onclick=play_track('"+track_id+"')>" + str(track['title']) + '</td>', "utf-8"))
 
             # for playlist_id in track['playlists']:
             playlist_index = 0
             for playlist_id in playlists_dict:
                 self.wfile.write(bytes('<td style="background:hsla('+str(playlist_index * 72)+',100%, 90%, 1);">', "utf-8"))
                 playlist_index += 1
-                self.wfile.write(bytes('<input type=checkbox', "utf-8"))
+                self.wfile.write(bytes('<input type=checkbox data-track='+track_id+' data-playlist='+playlist_id+' ', "utf-8"))
                 if (playlist_id in track['playlists']):
                     self.wfile.write(bytes(' checked', "utf-8"))
-                self.wfile.write(bytes('>', "utf-8"))
+                self.wfile.write(bytes("""onchange="do_toggle(this);">""", "utf-8"))
                 self.wfile.write(bytes('</td>', "utf-8"))
             self.wfile.write(bytes('</tr>', "utf-8"))
         self.wfile.write(bytes('</table>', "utf-8"))
@@ -103,17 +150,33 @@ class SPM_Server(BaseHTTPRequestHandler):
     def do_GET(self):
         if (self.path == '/'):
             self.list_tracks()
+        # elif (self.path == '/favicon.ico'):
+
         else:
             path_frags = self.path.split('/')
-            uprint(json.dumps(path_frags))
-            # self.send_response(200)
-            # self.send_header("Content-type", "text/html")
-            # self.end_headers()
-            # self.wfile.write(bytes("<html><head><title>https://pythonbasics.org</title></head>", "utf-8"))
-            # self.wfile.write(bytes("<p>Request: %s</p>" % self.path, "utf-8"))
-            # self.wfile.write(bytes("<body>", "utf-8"))
-            # self.wfile.write(bytes("<p>This is an example web server.</p>", "utf-8"))
-            # self.wfile.write(bytes("</body></html>", "utf-8"))
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(bytes("<html><head><title>https://pythonbasics.org</title></head>", "utf-8"))
+            self.wfile.write(bytes("<body>", "utf-8"))
+            if (len(path_frags) == 5):
+                if (path_frags[1] == 'add'):
+                    add_to_playlist(path_frags[2], path_frags[3])
+                    self.wfile.write(bytes("""added x to y""", "utf-8"))
+                elif (path_frags[1] == 'remove'):
+                    remove_from_playlist(path_frags[2], path_frags[3])
+                    self.wfile.write(bytes("""removed x from y""", "utf-8"))
+            self.wfile.write(bytes("<p>Request: %s</p>" % json.dumps(path_frags), "utf-8"))
+            self.wfile.write(bytes("</body></html>", "utf-8"))
+
+def remove_from_playlist(playlist_id, track_id):
+    global sp
+    sp.playlist_remove_all_occurrences_of_items(playlist_id, [track_id])
+
+def add_to_playlist(playlist_id, track_id):
+    global sp
+    sp.playlist_add_items(playlist_id, [track_id])
 
 def uprint(*objects, sep=' ', end='\n', file=sys.stdout):
     enc = file.encoding
