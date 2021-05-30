@@ -108,10 +108,30 @@ class SPM_Server(BaseHTTPRequestHandler):
             padding:        0.5em; 0.07em
             text-align:     center;
         }
+
+        td.track_artist,
+        td.track_title
+        {
+            position:       sticky;
+            z-index:     -1;
+        }
+
+        td.track_artist
+        {
+            left:           0;
+        }
+
+        td.track_title
+        {
+            left:           2em;
+        }
+
+
         td.track_title:hover
         {
             background:     #ff0;
         }
+
         table.b td
         {
             background:     #eee;
@@ -120,6 +140,11 @@ class SPM_Server(BaseHTTPRequestHandler):
             border-right:   1px solid #ddd;
             border-bottom:  1px solid #ddd;
             font-size:      0.9em
+        }
+        table.b tr:hover td
+        {
+            border-top:     1px solid #444;
+            border-bottom:  1px solid #444;
         }
         #sp_embed
         {
@@ -132,8 +157,10 @@ class SPM_Server(BaseHTTPRequestHandler):
 
         table.b td.pc
         {
-            border:         none;
+            border-top:     1px solid hsla(0,0%,0%,0);
+            border-bottom:  1px solid hsla(0,0%,0%,0);
             padding:        0;
+            z-index:        1;
         }
 
         table.b td.pc label
@@ -241,8 +268,8 @@ class SPM_Server(BaseHTTPRequestHandler):
 
 <table class=b>
     <tr>
-        <th>artist</th>
-        <th>title</th>""", "utf-8"))
+        <th class=track_artist>artist</th>
+        <th class=track_title>title</th>""", "utf-8"))
 
         playlist_index = 0
         for playlist_id in playlists_dict:
@@ -256,11 +283,11 @@ class SPM_Server(BaseHTTPRequestHandler):
         for track_id in sorted_tracks_dict:
             track = sorted_tracks_dict[track_id]
             self.wfile.write(bytes('<tr>', "utf-8"))
-            self.wfile.write(bytes('<td>' + str(track['artist']) + '</td>', "utf-8"))
+            self.wfile.write(bytes('<td class=track_artist>' + str(track['artist']) + '</td>', "utf-8"))
 
             # uhm
             if track_id is None:
-                self.wfile.write(bytes('<td><b>????</b>  ' + str(track['title']) + '</td>', "utf-8"))
+                self.wfile.write(bytes('<td class=track_title><b>????</b>  ' + str(track['title']) + '</td>', "utf-8"))
             else:
                 # self.wfile.write(bytes("<td class=track_title onclick=play_track('"+track_id+"')>" + str(track['title']) + '</td>', "utf-8"))
                 self.wfile.write(bytes("<td class=track_title onclick=play_track('"+track_id+"')>" + str(track['title']) + '</td>', "utf-8"))
